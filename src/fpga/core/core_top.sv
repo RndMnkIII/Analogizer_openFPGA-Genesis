@@ -1359,8 +1359,6 @@ synch_3 #(.WIDTH(14)) sync_analogizer(analogizer_settings, analogizer_settings_s
 
 
 wire clk_vid = clk_sys; //video_rgb_clock; //Fixed one bit shift error on RGB channels.
-wire SYNC = ~^{hs_c, vs_c};
-wire  ANALOGIZER_DE = ~(hblank_c || vblank_c);
 
   //create aditional switch to blank Pocket screen.
   assign video_rgb = (analogizer_video_type[3]) ? 24'h000000: video_rgb_reg;
@@ -1491,6 +1489,48 @@ parameter MASTER_CLK_FREQ = 53_693_181;
 reg old_ce_pix;
 always @(posedge clk_sys) old_ce_pix <= ce_pix;
 
+
+//Fix Vsync
+reg hs_prev2;
+reg vblank_line2;
+reg [7:0] RGIZER, GGIZER, BGIZER;
+
+// wire SYNC = ~^{hs_c, vs_c};
+// wire  ANALOGIZER_DE = ~(hblank_c || vblank_line2); //vblank_line
+reg SYNC, ANALOGIZER_DE;
+reg hblank2;
+reg hs2, vs2;
+
+always @(posedge clk_vid) begin
+    if (ce_pix) begin
+        ANALOGIZER_DE <= 1'b0;
+        SYNC <= ~^{hs_c, vs_c};
+
+        hblank2 <= hblank_c;
+        hs2 <= hs_c;
+        vs2 <= vs_c;
+        hs_prev2 <= hs_c;
+
+        if (~(vblank_line2 || hblank_c)) begin
+            //ANALOGIZER_DE <= ~(hblank_c || vblank_line2); //vblank_line
+            ANALOGIZER_DE <= 1'b1;
+            RGIZER <= (lg_target && lightgun_enabled && show_crosshair) ? {8{lg_target[0]}} : red;
+            GGIZER <= (lg_target && lightgun_enabled && show_crosshair) ? {8{lg_target[1]}} : green;
+            BGIZER <= (lg_target && lightgun_enabled && show_crosshair) ? {8{lg_target[2]}} : blue;
+        end
+        //vs_prev2 <= vs_c;
+
+        // the vblank signal starts and stops a bit before the end of the visible
+        // portion of the line. if used to gate pixel output, this means the last
+        // visible line gets truncated and the last blank line is partially shown,
+        // producing garbage on the screen. capture and use vblank's value at hsync
+        // to avoid this; hsync starts a line so that's when we care whether or not
+        // the line is visible.
+        if (~hs_prev2 && hs_c) begin
+            vblank_line2 <= vblank_c;
+        end
+    end
+end
 openFPGA_Pocket_Analogizer #(.MASTER_CLK_FREQ(MASTER_CLK_FREQ), .LINE_LENGTH(320)) analogizer (
     .i_clk(clk_sys),
     .i_rst(~(~reset && !reset_delay)), //i_rst is active high
@@ -1498,22 +1538,22 @@ openFPGA_Pocket_Analogizer #(.MASTER_CLK_FREQ(MASTER_CLK_FREQ), .LINE_LENGTH(320
     //Video interface
     .analog_video_type(analogizer_video_type),
     //.analog_video_type(4'd0),
-    .R((lg_target && lightgun_enabled && show_crosshair) ? {8{lg_target[0]}} : red),
-    .G((lg_target && lightgun_enabled && show_crosshair) ? {8{lg_target[1]}} : green),
-    .B((lg_target && lightgun_enabled && show_crosshair) ? {8{lg_target[2]}} : blue),
-    .Hblank(hblank_c),
-    .Vblank(vblank_c),
+    .R(RGIZER),
+    .G(GGIZER),
+    .B(BGIZER),
+    .Hblank(hblank2),
+    .Vblank(vblank_line2),
     .BLANKn(ANALOGIZER_DE),
     .Csync(SYNC),
-    .Hsync(hs_c),
-    .Vsync(vs_c),
+    .Hsync(hs2),
+    .Vsync(vs2),
     .video_clk(clk_vid),
     //Video Y/C Encoder interface
     .PALFLAG(PALFLAG),
     .CHROMA_PHASE_INC(CHROMA_PHASE_INC),
     //Video SVGA Scandoubler interface
-    .scandoubler(~interlaced), //logic to enable/disable scandoubler
-    .ce_pix(~old_ce_pix & ce_pix),
+    .scandoubler(1'b1), //logic to enable/disable scandoubler
+    .ce_pix(ce_pix),
     .fx({1'b0,2'd2}), //HQ2x=0,50% scanlines
 	//SNAC interface
 	.conf_AB((snac_game_cont_type >= 5'd16)),              //0 conf. A(default), 1 conf. B (see graph above)

@@ -1,5 +1,6 @@
 # Genesis for Analogue Pocket with support for Analogizer-FPGA adapter
-* Analogizer V1.0   [22/06/2024]: Added initial support for Analogizer adapter (RGBS, RGsB, YPbPr, Y/C, SVGA Scandoubler)
+* Analogizer V1.0.0   [22/06/2024]: Added initial support for Analogizer adapter (RGBS, RGsB, YPbPr, Y/C, SVGA Scandoubler)
+* Analogizer V1.0.1   [23/06/2024]: Fixed truncated last scanline.
   
   Adapted to Analogizer by [@RndMnkIII](https://github.com/RndMnkIII) based on **ericlewis** Genesis for Analogue Pocket Core.
 
