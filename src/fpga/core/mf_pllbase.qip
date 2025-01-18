@@ -1,5 +1,5 @@
 set_global_assignment -entity "mf_pllbase" -library "mf_pllbase" -name IP_TOOL_NAME "altera_pll"
-set_global_assignment -entity "mf_pllbase" -library "mf_pllbase" -name IP_TOOL_VERSION "21.1"
+set_global_assignment -entity "mf_pllbase" -library "mf_pllbase" -name IP_TOOL_VERSION "18.1"
 set_global_assignment -entity "mf_pllbase" -library "mf_pllbase" -name IP_TOOL_ENV "mwpim"
 set_global_assignment -library "mf_pllbase" -name MISC_FILE [file join $::quartus(qip_path) "mf_pllbase.cmp"]
 set_global_assignment -entity "mf_pllbase" -library "mf_pllbase" -name IP_TARGETED_DEVICE_FAMILY "Cyclone V"
@@ -333,5 +333,5 @@ set_global_assignment -library "mf_pllbase" -name VERILOG_FILE [file join $::qua
 set_global_assignment -library "mf_pllbase" -name QIP_FILE [file join $::quartus(qip_path) "mf_pllbase/mf_pllbase_0002.qip"]
 
 set_global_assignment -entity "mf_pllbase_0002" -library "mf_pllbase" -name IP_TOOL_NAME "altera_pll"
-set_global_assignment -entity "mf_pllbase_0002" -library "mf_pllbase" -name IP_TOOL_VERSION "21.1"
+set_global_assignment -entity "mf_pllbase_0002" -library "mf_pllbase" -name IP_TOOL_VERSION "18.1"
 set_global_assignment -entity "mf_pllbase_0002" -library "mf_pllbase" -name IP_TOOL_ENV "mwpim"

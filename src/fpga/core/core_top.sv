@@ -1368,10 +1368,46 @@ always @(*) begin
   snac_cont_assignment  = analogizer_settings_s[9:6];
   analogizer_video_type = analogizer_settings_s[13:10];
 end 
+//use PSX Dual Shock style left analog stick as directional pad
+wire is_analog_input = (snac_game_cont_type == 5'h13);
+
+//! Player 1 ---------------------------------------------------------------------------
+reg p1_up, p1_down, p1_left, p1_right;
+wire p1_up_analog, p1_down_analog, p1_left_analog, p1_right_analog;
+//using left analog joypad
+assign p1_up_analog    = (p1_stick[15:8] < 8'h40) ? 1'b1 : 1'b0; //analog range UP 0x00 Idle 0x7F DOWN 0xFF, DEADZONE +- 0x15
+assign p1_down_analog  = (p1_stick[15:8] > 8'hC0) ? 1'b1 : 1'b0; 
+assign p1_left_analog  = (p1_stick[7:0]  < 8'h40) ? 1'b1 : 1'b0; //analog range LEFT 0x00 Idle 0x7F RIGHT 0xFF, DEADZONE +- 0x15
+assign p1_right_analog = (p1_stick[7:0]  > 8'hC0) ? 1'b1 : 1'b0;
+
+always @(posedge clk_sys) begin
+    p1_up    <= (is_analog_input) ? p1_up_analog    : p1_btn[0];
+    p1_down  <= (is_analog_input) ? p1_down_analog  : p1_btn[1];
+    p1_left  <= (is_analog_input) ? p1_left_analog  : p1_btn[2];
+    p1_right <= (is_analog_input) ? p1_right_analog : p1_btn[3];
+end
+
+//! Player 2 ---------------------------------------------------------------------------
+reg p2_up, p2_down, p2_left, p2_right;
+wire p2_up_analog, p2_down_analog, p2_left_analog, p2_right_analog;
+//using left analog joypad
+assign p2_up_analog    = (p2_stick[15:8] < 8'h40) ? 1'b1 : 1'b0; //analog range UP 0x00 Idle 0x7F DOWN 0xFF, DEADZONE +- 0x15
+assign p2_down_analog  = (p2_stick[15:8] > 8'hC0) ? 1'b1 : 1'b0; 
+assign p2_left_analog  = (p2_stick[7:0]  < 8'h40) ? 1'b1 : 1'b0; //analog range LEFT 0x00 Idle 0x7F RIGHT 0xFF, DEADZONE +- 0x15
+assign p2_right_analog = (p2_stick[7:0]  > 8'hC0) ? 1'b1 : 1'b0;
+
+always @(posedge clk_sys) begin
+    p2_up    <= (is_analog_input) ? p2_up_analog    : p2_btn[0];
+    p2_down  <= (is_analog_input) ? p2_down_analog  : p2_btn[1];
+    p2_left  <= (is_analog_input) ? p2_left_analog  : p2_btn[2];
+    p2_right <= (is_analog_input) ? p2_right_analog : p2_btn[3];
+end
 
 
 //switch between Analogizer SNAC and Pocket Controls for P1-P4 (P3,P4 when uses PCEngine Multitap)
 wire [15:0] p1_btn, p2_btn, p3_btn, p4_btn;
+wire [31:0] p1_stick;
+wire [31:0] p2_stick;   
 reg [15:0] p1_controls, p2_controls, p3_controls, p4_controls;
 reg [7:0] p1_stick_x, p1_stick_y;
 
@@ -1387,9 +1423,9 @@ always @(posedge clk_sys) begin
     else begin
         case(snac_cont_assignment)
         4'h0:    begin 
-                    p1_controls <= p1_btn;
-                    p1_stick_x  <= 8'd0;
-                    p1_stick_y  <= 8'd0;
+                    p1_controls <= {p1_btn[15:4],p1_right,p1_left,p1_down,p1_up};
+                    p1_stick_x  <= p1_stick[7:0];
+                    p1_stick_y  <= p1_stick[15:8];
                     p2_controls <= cont2_key_s;
                     p3_controls <= cont3_key_s;
                     p4_controls <= cont4_key_s;
@@ -1398,31 +1434,31 @@ always @(posedge clk_sys) begin
                     p1_controls <= cont1_key_s;
                     p1_stick_x  <= cont1_joy_s[7:0];
                     p1_stick_y  <= cont1_joy_s[15:8];
-                    p2_controls <= p1_btn;
+                    p2_controls <= {p1_btn[15:4],p1_right,p1_left,p1_down,p1_up};
                     p3_controls <= cont3_key_s;
                     p4_controls <= cont4_key_s;
                 end
         4'h2:    begin
-                    p1_controls <= p1_btn;
-                    p1_stick_x  <= 8'd0;
-                    p1_stick_y  <= 8'd0;
-                    p2_controls <= p2_btn;
+                    p1_controls <= {p1_btn[15:4],p1_right,p1_left,p1_down,p1_up};
+                    p1_stick_x  <= p1_stick[7:0];
+                    p1_stick_y  <= p1_stick[15:8];
+                    p2_controls <= {p2_btn[15:4],p2_right,p2_left,p2_down,p2_up};
                     p3_controls <= cont3_key_s;
                     p4_controls <= cont4_key_s;
                 end
         4'h3:    begin
-                    p1_controls <= p2_btn;
-                    p1_stick_x  <= 8'd0;
-                    p1_stick_y  <= 8'd0;
-                    p2_controls <= p1_btn;
+                    p1_controls <= {p2_btn[15:4],p2_right,p2_left,p2_down,p2_up};
+                    p1_stick_x  <= p2_stick[7:0];
+                    p1_stick_y  <= p2_stick[15:8];
+                    p2_controls <= {p1_btn[15:4],p1_right,p1_left,p1_down,p1_up};
                     p3_controls <= cont3_key_s;
                     p4_controls <= cont4_key_s;
                 end
         4'h4:    begin
-                    p1_controls <= p1_btn;
-                    p1_stick_x  <= 8'd0;
-                    p1_stick_y  <= 8'd0;
-                    p2_controls <= p2_btn;
+                    p1_controls <= {p1_btn[15:4],p1_right,p1_left,p1_down,p1_up};
+                    p1_stick_x  <= p1_stick[7:0];
+                    p1_stick_y  <= p1_stick[15:8]; 
+                    p2_controls <= {p2_btn[15:4],p2_right,p2_left,p2_down,p2_up};
                     p3_controls <= p3_btn;
                     p4_controls <= p4_btn;
                 end
@@ -1431,14 +1467,16 @@ always @(posedge clk_sys) begin
                     p1_stick_x  <= 8'd0;
                     p1_stick_y  <= 8'd0;
                     p2_controls <= p3_btn;
-                    p3_controls <= p2_btn;
-                    p4_controls <= p1_btn;
+                    p3_controls <= {p2_btn[15:4],p2_right,p2_left,p2_down,p2_up};
+                    p4_controls <= {p1_btn[15:4],p1_right,p1_left,p1_down,p1_up};
                 end
         4'h6:    begin
                     p1_controls <= cont1_key_s;
+                    p1_stick_x  <= cont1_joy_s[7:0];
+                    p1_stick_y  <= cont1_joy_s[15:8];
                     p2_controls <= cont2_key_s;
-                    p3_controls <= p1_btn;
-                    p4_controls <= p2_btn;
+                    p3_controls <= {p1_btn[15:4],p1_right,p1_left,p1_down,p1_up};
+                    p4_controls <= {p2_btn[15:4],p2_right,p2_left,p2_down,p2_up};
                 end
         default: begin
                     p1_controls <= cont1_key_s;
@@ -1487,50 +1525,22 @@ assign COLORBURST_RANGE = {COLORBURST_START, COLORBURST_NTSC_END, COLORBURST_PAL
 parameter MASTER_CLK_FREQ = 53_693_181;
 
 reg old_ce_pix;
-always @(posedge clk_sys) old_ce_pix <= ce_pix;
+always @(posedge clk_ram) old_ce_pix <= ce_pix;
 
+wire SYNC = ~^{hs_c, vs_c};
+wire  ANALOGIZER_DE = ~(hblank_c || vblank_c); //vblank_line
 
-//Fix Vsync
-reg hs_prev2;
-reg vblank_line2;
-reg [7:0] RGIZER, GGIZER, BGIZER;
-
-// wire SYNC = ~^{hs_c, vs_c};
-// wire  ANALOGIZER_DE = ~(hblank_c || vblank_line2); //vblank_line
-reg SYNC, ANALOGIZER_DE;
-reg hblank2;
-reg hs2, vs2;
-
-always @(posedge clk_vid) begin
-    if (ce_pix) begin
-        ANALOGIZER_DE <= 1'b0;
-        SYNC <= ~^{hs_c, vs_c};
-
-        hblank2 <= hblank_c;
-        hs2 <= hs_c;
-        vs2 <= vs_c;
-        hs_prev2 <= hs_c;
-
-        if (~(vblank_line2 || hblank_c)) begin
-            //ANALOGIZER_DE <= ~(hblank_c || vblank_line2); //vblank_line
-            ANALOGIZER_DE <= 1'b1;
-            RGIZER <= (lg_target && lightgun_enabled && show_crosshair) ? {8{lg_target[0]}} : red;
-            GGIZER <= (lg_target && lightgun_enabled && show_crosshair) ? {8{lg_target[1]}} : green;
-            BGIZER <= (lg_target && lightgun_enabled && show_crosshair) ? {8{lg_target[2]}} : blue;
-        end
-        //vs_prev2 <= vs_c;
-
-        // the vblank signal starts and stops a bit before the end of the visible
-        // portion of the line. if used to gate pixel output, this means the last
-        // visible line gets truncated and the last blank line is partially shown,
-        // producing garbage on the screen. capture and use vblank's value at hsync
-        // to avoid this; hsync starts a line so that's when we care whether or not
-        // the line is visible.
-        if (~hs_prev2 && hs_c) begin
-            vblank_line2 <= vblank_c;
-        end
-    end
+reg [2:0] fx /* synthesis preserve */;
+reg sd_ena;
+always @(posedge clk_sys) begin
+    case (analogizer_video_type)
+        4'd5, 4'd13:    begin sd_ena <= 1'b1; fx <= 3'd0; end //SC  0%     1 SC 25%
+        4'd6, 4'd14:    begin sd_ena <= 1'b1; fx <= 3'd2; end //SC  50%    3 SC 75%
+        4'd7, 4'd15:    begin sd_ena <= 1'b1; fx <= 3'd4; end //hq2x
+        default:        begin sd_ena <= 1'b0; fx <= 3'd0; end
+    endcase
 end
+
 openFPGA_Pocket_Analogizer #(.MASTER_CLK_FREQ(MASTER_CLK_FREQ), .LINE_LENGTH(320)) analogizer (
     .i_clk(clk_sys),
     .i_rst(~(~reset && !reset_delay)), //i_rst is active high
@@ -1538,30 +1548,32 @@ openFPGA_Pocket_Analogizer #(.MASTER_CLK_FREQ(MASTER_CLK_FREQ), .LINE_LENGTH(320
     //Video interface
     .analog_video_type(analogizer_video_type),
     //.analog_video_type(4'd0),
-    .R(RGIZER),
-    .G(GGIZER),
-    .B(BGIZER),
-    .Hblank(hblank2),
-    .Vblank(vblank_line2),
+    .R((lg_target && lightgun_enabled && show_crosshair) ? {8{lg_target[0]}} : red),
+    .G((lg_target && lightgun_enabled && show_crosshair) ? {8{lg_target[1]}} : green),
+    .B((lg_target && lightgun_enabled && show_crosshair) ? {8{lg_target[2]}} : blue),
+    .Hblank(hblank_c),
+    .Vblank(vblank_c),
     .BLANKn(ANALOGIZER_DE),
     .Csync(SYNC),
-    .Hsync(hs2),
-    .Vsync(vs2),
+    .Hsync(hs_c),
+    .Vsync(vs_c),
     .video_clk(clk_vid),
     //Video Y/C Encoder interface
     .PALFLAG(PALFLAG),
     .CHROMA_PHASE_INC(CHROMA_PHASE_INC),
     //Video SVGA Scandoubler interface
-    .scandoubler(1'b1), //logic to enable/disable scandoubler
-    .ce_pix(ce_pix),
-    .fx({1'b0,2'd2}), //HQ2x=0,50% scanlines
+    .scandoubler(~interlaced), //logic to enable/disable scandoubler
+    .ce_pix(~old_ce_pix & ce_pix),
+	.fx(fx), //0 disable, 1 scanlines 25%, 2 scanlines 50%, 3 scanlines 75%, 4 hq2x
 	//SNAC interface
 	.conf_AB((snac_game_cont_type >= 5'd16)),              //0 conf. A(default), 1 conf. B (see graph above)
 	.game_cont_type(snac_game_cont_type), //0-15 Conf. A, 16-31 Conf. B
 	.p1_btn_state(p1_btn),
+    .p1_joy_state(p1_stick),
 	.p2_btn_state(p2_btn),  
+    .p2_joy_state(p2_stick),
     .p3_btn_state(p3_btn),
-	.p4_btn_state(p4_btn),   
+	.p4_btn_state(p4_btn),  
 	//Pocket Analogizer IO interface to the Pocket cartridge port
 	.cart_tran_bank2(cart_tran_bank2),
 	.cart_tran_bank2_dir(cart_tran_bank2_dir),
