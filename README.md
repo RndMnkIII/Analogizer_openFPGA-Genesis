@@ -1,7 +1,8 @@
 # Genesis for Analogue Pocket with support for Analogizer-FPGA adapter
 * Analogizer V1.0.0   [22/06/2024]: Added initial support for Analogizer adapter (RGBS, RGsB, YPbPr, Y/C, SVGA Scandoubler)
 * Analogizer V1.0.1   [23/06/2024]: Fixed truncated last scanline.
-* Analogizer V1.0.2   [19/01/2025]: Added PSX digital/DS/DS2 SNAC support (SCPH-1010, SPCH-1080,SCPH-1180, SCPH-1200, SCPH-10010 and clones). Fixed video output.
+* Analogizer V1.0.2   [19/01/2025]: Added PSX digital/DS/DS2 SNAC support (SCPH-1010, SPCH-1080,SCPH-1180, SCPH-1200, SCPH-10010 and clones).
+* Analogizer V1.0.3   [19/01/2025]: Fixed light gun control using SNAC analog stick.
   
   Adapted to Analogizer by [@RndMnkIII](https://github.com/RndMnkIII) based on **ericlewis** Genesis for Analogue Pocket Core.
 

@@ -1100,12 +1100,12 @@ lightgun lightgun
 
     .JOY_X(p1_stick_x),
     .JOY_Y(p1_stick_y),
-    .JOY(cont1_key),
+    .JOY(p1_controls),
 
-    .UP(cont1_key[0]),
-    .DOWN(cont1_key[1]),
-    .LEFT(cont1_key[2]),
-    .RIGHT(cont1_key[3]),
+    .UP(p1_controls[0]),
+    .DOWN(p1_controls[1]),
+    .LEFT(p1_controls[2]),
+    .RIGHT(p1_controls[3]),
     .DPAD_AIM_SPEED(dpad_aim_speed),
 
     .RELOAD(lightgun_type),
@@ -1344,10 +1344,6 @@ system system
 //Pocket Menu settings
 reg [13:0] analogizer_settings = 0;
 wire [13:0] analogizer_settings_s;
-// reg sync_dejitter;
-// reg yc_cvbs;
-// wire sync_dejitter_s;
-// wire yc_cvbs_s;
 
 reg analogizer_ena;
 reg [3:0] analogizer_video_type;
@@ -1524,11 +1520,11 @@ assign COLORBURST_RANGE = {COLORBURST_START, COLORBURST_NTSC_END, COLORBURST_PAL
 
 parameter MASTER_CLK_FREQ = 53_693_181;
 
-reg old_ce_pix;
-always @(posedge clk_ram) old_ce_pix <= ce_pix;
+// reg old_ce_pix;
+// always @(posedge clk_ram) old_ce_pix <= ce_pix;
 
-wire SYNC = ~^{hs_c, vs_c};
-wire  ANALOGIZER_DE = ~(hblank_c || vblank_c); //vblank_line
+// wire SYNC = ~^{hs_c, vs_c};
+// wire  ANALOGIZER_DE = ~(hblank_c || vblank_c); //vblank_line
 
 reg [2:0] fx /* synthesis preserve */;
 reg sd_ena;
@@ -1541,6 +1537,52 @@ always @(posedge clk_sys) begin
     endcase
 end
 
+reg old_ce_pix;
+always @(posedge clk_sys) old_ce_pix <= ce_pix;
+
+
+//Fix Vsync
+reg hs_prev2;
+reg vblank_line2;
+reg [7:0] RGIZER, GGIZER, BGIZER;
+
+// wire SYNC = ~^{hs_c, vs_c};
+// wire  ANALOGIZER_DE = ~(hblank_c || vblank_line2); //vblank_line
+reg SYNC, ANALOGIZER_DE;
+reg hblank2;
+reg hs2, vs2;
+
+always @(posedge clk_vid) begin
+    if (ce_pix) begin
+        ANALOGIZER_DE <= 1'b0;
+        SYNC <= ~^{hs_c, vs_c};
+
+        hblank2 <= hblank_c;
+        hs2 <= hs_c;
+        vs2 <= vs_c;
+        hs_prev2 <= hs_c;
+
+        if (~(vblank_line2 || hblank_c)) begin
+            //ANALOGIZER_DE <= ~(hblank_c || vblank_line2); //vblank_line
+            ANALOGIZER_DE <= 1'b1;
+            RGIZER <= (lg_target && lightgun_enabled && show_crosshair) ? {8{lg_target[0]}} : red;
+            GGIZER <= (lg_target && lightgun_enabled && show_crosshair) ? {8{lg_target[1]}} : green;
+            BGIZER <= (lg_target && lightgun_enabled && show_crosshair) ? {8{lg_target[2]}} : blue;
+        end
+        //vs_prev2 <= vs_c;
+
+        // the vblank signal starts and stops a bit before the end of the visible
+        // portion of the line. if used to gate pixel output, this means the last
+        // visible line gets truncated and the last blank line is partially shown,
+        // producing garbage on the screen. capture and use vblank's value at hsync
+        // to avoid this; hsync starts a line so that's when we care whether or not
+        // the line is visible.
+        if (~hs_prev2 && hs_c) begin
+            vblank_line2 <= vblank_c;
+        end
+    end
+end
+
 openFPGA_Pocket_Analogizer #(.MASTER_CLK_FREQ(MASTER_CLK_FREQ), .LINE_LENGTH(320)) analogizer (
     .i_clk(clk_sys),
     .i_rst(~(~reset && !reset_delay)), //i_rst is active high
@@ -1548,21 +1590,21 @@ openFPGA_Pocket_Analogizer #(.MASTER_CLK_FREQ(MASTER_CLK_FREQ), .LINE_LENGTH(320
     //Video interface
     .analog_video_type(analogizer_video_type),
     //.analog_video_type(4'd0),
-    .R((lg_target && lightgun_enabled && show_crosshair) ? {8{lg_target[0]}} : red),
-    .G((lg_target && lightgun_enabled && show_crosshair) ? {8{lg_target[1]}} : green),
-    .B((lg_target && lightgun_enabled && show_crosshair) ? {8{lg_target[2]}} : blue),
-    .Hblank(hblank_c),
-    .Vblank(vblank_c),
+    .R(RGIZER),
+    .G(GGIZER),
+    .B(BGIZER),
+    .Hblank(hblank2),
+    .Vblank(vblank_line2),
     .BLANKn(ANALOGIZER_DE),
     .Csync(SYNC),
-    .Hsync(hs_c),
-    .Vsync(vs_c),
+    .Hsync(hs2),
+    .Vsync(vs2),
     .video_clk(clk_vid),
     //Video Y/C Encoder interface
     .PALFLAG(PALFLAG),
     .CHROMA_PHASE_INC(CHROMA_PHASE_INC),
     //Video SVGA Scandoubler interface
-    .scandoubler(~interlaced), //logic to enable/disable scandoubler
+    .scandoubler(!interlaced && (sd_ena == 1'b1)), //logic to enable/disable scandoubler
     .ce_pix(~old_ce_pix & ce_pix),
 	.fx(fx), //0 disable, 1 scanlines 25%, 2 scanlines 50%, 3 scanlines 75%, 4 hq2x
 	//SNAC interface

@@ -63,10 +63,6 @@
           {
             "value": "0x13",
             "name": "PSX (Analog DPAD)"
-          },
-          {
-            "value": "0x14",
-            "name": "PSX (P1 Lightgun)"
           }
         ]
     },
