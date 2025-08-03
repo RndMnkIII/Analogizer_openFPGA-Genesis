@@ -3,6 +3,7 @@
 * Analogizer V1.0.1   [23/06/2024]: Fixed truncated last scanline.
 * Analogizer V1.0.2   [19/01/2025]: Added PSX digital/DS/DS2 SNAC support (SCPH-1010, SPCH-1080,SCPH-1180, SCPH-1200, SCPH-10010 and clones).
 * Analogizer V1.0.3   [19/01/2025]: Fixed light gun control using SNAC analog stick.
+* Analogizer V1.0.4   [03/08/2025]: Reimplements the SDRAM controller used in the MiSTer version with more relaxed ROM loading parameters.
   
   Adapted to Analogizer by [@RndMnkIII](https://github.com/RndMnkIII) based on **ericlewis** Genesis for Analogue Pocket Core.
 
